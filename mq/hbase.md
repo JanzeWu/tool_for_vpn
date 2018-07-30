@@ -97,6 +97,12 @@ Region Server 在HDFS DataNote 上运行，包括以下组件：
 
 
 
+##### region 
+
+每个region中一个CF由一个Store服务,  一个 region 可以包含多个Store. 每个Store由一个MemStore 和 0 个或者多个HFile组成. 
+
+
+
 #### HBase Write 操作 
 
 1. 当client发出put 请求时，第一步是将Edits写入预写日志WAL。
@@ -113,6 +119,8 @@ MemStore将更新作为已排序的KeyValues存储在内存中，与存储在HFi
 #### HBase Region Flush
 
 当MemStore 积累足够数据时，整个有序集合被写入HDFS中新的HFile。一个CF包括多个HFiles，HFile在MemStore 将数据落盘时被创建。最大的写序列号被保存在HFile中。
+
+最小的flush 单元是region, 当一个MemStore 达到 hbase.hregion.memstore.flush.size 时, 同个region 所有的MemStore 将flush 到磁盘.
 
 
 
@@ -215,3 +223,23 @@ HDFS 复制WAL和HFIle 块。HFile块复制自动发生。HBase依赖HDFS在存�
 
 当某个RegionServer 宕机时，Zookeeper丢失来自它的心跳，HMaster将被通知这个信息。HMaster 重新分配已经宕机的RegionServer 上 的region给活着的RegionServer。新的RegionServer将恢复宕机RegionServer MemStore 中未持久化的更新操作。HMaster 将属于宕机RegionServer 的 WAL分割成多个文件并存储到这些新的RegionServer的DataNode中。每个新的RegionServer 将重放WAL以重建Region 的 MemStore。
 
+#### HBase 强一致性
+
+HBase 使用多版本并发控制(MVCC)来保证强一致性.
+
+##### 对于写操作
+
+1. 获取行锁;
+2. 申请新的写序号;
+3. 写WAL;
+4. 更新MemStore, 将数据内容和写序号更新到MemStore;
+5. 结束写序列号;
+6. 释放行锁.
+
+
+
+##### 对于读操作
+
+1. 每个读操作都被分配一个时间戳, 称为读取点;
+2. 读取点被指定为最高整数, 以便写入序号 <= x 的所有写入都已经完成;
+3. 一个对特定(row, column)的查询, 返回的匹配(row, column)数据所携带的写序号必须是最大的并且小于读点.
