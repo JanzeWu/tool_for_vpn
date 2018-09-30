@@ -1,3 +1,5 @@
+
+
 # HBase
 
 HBase 是一种类似于数据库的存储层，适用于结构化的存储，是一种列式的分布式数据库。HBase适合用来进行大数据的实时查询，ACID只支持单个Row级别。
@@ -153,6 +155,8 @@ Trailer 指向元数据块，被写入持久化数据文件的结尾处。Traile
 | Bloom                         |
 | Trailer                       |
 
+
+
 ```mermaid
 graph TB
     A[Root Index]
@@ -184,7 +188,7 @@ graph TB
 
 ##### Read Amplification
 
-一个MemStore可能有多个HFile，因此每次读操作，可能因需要检查多个文件而印象性能。这就是读操作放大。
+一个MemStore可能有多个HFile，因此每次读操作，可能因需要检查多个文件而影响性能。这就是读操作放大。
 
 #### HBase Minor Compaction （压实）
 
@@ -209,7 +213,7 @@ HBase自动选择一些小的HFile，将它们重写到更少的更大的HFile�
 
 #### Region Split
 
-每个标初始化时都有一个Region。当Region增长到很大时，它会分解为两个子Region，每个子Region包含父Region一半的数据，在Region Server 中并行打开，分解的结果会被报告给HMaster。出于负载平衡，HMaster可以安排将新区域移到其他服务器。
+每个表初始化时都有一个Region。当Region增长到很大时，它会分解为两个子Region，每个子Region包含父Region一半的数据，在Region Server 中并行打开，分解的结果会被报告给HMaster。出于负载平衡，HMaster可以安排将新区域移到其他服务器。
 
 
 
